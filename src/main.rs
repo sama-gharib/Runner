@@ -1,16 +1,12 @@
 use raylib::prelude::*;
 
+mod util;
+mod model;
+
+use crate::model::application::Application;
+
 fn main() {
-    let (mut rl, thread) = raylib::init()
-        .size(800, 450)
-        .title("Runner")
-        .build();
+    let mut app = Application::new();
 
-    rl.set_target_fps(60);
-
-    while !rl.window_should_close() {
-        let mut d = rl.begin_drawing(&thread);
-
-        d.clear_background(Color::BLACK);
-    }
+    app.run();
 }
