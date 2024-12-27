@@ -1,8 +1,11 @@
+use crate::model::{Model, Notification, button::{Menu, Button}};
 use raylib::prelude::*;
 
+#[derive(Debug, Clone, Copy)]
 pub enum ApplicationState {
 	MainMenu,
-	Game
+	Game,
+	ConfirmQuit
 }
 
 pub struct ApplicationSettings {
@@ -22,32 +25,40 @@ impl Default for ApplicationSettings {
 pub struct Application {
 
 	state: ApplicationState,
-	settings: ApplicationSettings
+	settings: ApplicationSettings,
+	main_menu: Menu
+}
+
+impl Model for Application {
+	fn notify(&mut self, n: Notification) {
+		for (id, b) in self.main_menu.iter_mut() {
+			b.notify(n);
+			
+			if b.check() {
+				match *id {
+					"play" => self.state = ApplicationState::Game,
+					"quit" => self.state = ApplicationState::ConfirmQuit,
+					_ => eprintln!("Unknown button id : '{id}'.")
+				}
+			}
+		}
+	}
 }
 
 impl Application {
 
 	pub fn new() -> Self {
-		Self {
+		let mut r = Self {
 			state: ApplicationState::MainMenu,
-			settings: Default::default()
-		}
+			settings: Default::default(),
+			main_menu: Menu::new()
+		};
+		r.main_menu.insert("play", Button::new(Vector2::new(0.5, 0.2), Vector2::new(0.3, 0.1)));
+		r.main_menu.insert("quit", Button::new(Vector2::new(0.5, 0.4), Vector2::new(0.3, 0.1)));
+
+		r
 	}
 
-	pub fn run(&mut self) {
-		let size = self.settings.window_size;
-
-		let (mut rl, thread) = raylib::init()
-			.size(size.0, size.1)
-			.title("Runner")
-			.build();
-
-		rl.set_target_fps(self.settings.max_fps);
-
-		while !rl.window_should_close() {
-			let mut d = rl.begin_drawing(&thread);
-
-			d.clear_background(Color::BLACK);
-		}
-	}
+	pub fn main_menu(&self) -> Vec::<Button> { self.main_menu.iter().map(|(_, x)| *x).collect() }
+	pub fn state(&self) -> ApplicationState { self.state } 
 }
