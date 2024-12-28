@@ -1,52 +1,5 @@
 use raylib::prelude::*;
 
-pub struct World {
-	objects: Vec::<Object>,
-	camera: Camera2D
-}
-
-impl Default for World {
-	fn default() -> Self {
-		let mut r = Self::new();
-		
-		r.objects.push(Object::new().kind(ObjectKind::Player).speed(Vector2::new(5., 0.)));
-		r.objects.push(Object::new().kind(ObjectKind::Spike).position(Vector2::one() * 200.));
-		r.objects.push(Object::new().kind(ObjectKind::Wall).position(Vector2::new(0., 230.)).size(Vector2::new(10000., 300.)));
-
-		r
-	}
-}
-
-impl World {
-	pub fn new() -> Self {
-		Self {
-			objects: Vec::<Object>::new(),
-			camera: Camera2D {zoom: 1., offset: Vector2::new(200., 225.), ..Default::default()}
-		}
-	}
-
-	pub fn update(&mut self, rl: &mut RaylibHandle) {
-		for i in 0..self.objects.len() {			
-			let splitted = self.objects.split_at_mut(i+1);
-			for o in splitted.1 {
-				splitted.0.last_mut().unwrap().collide(o);
-			}
-			
-			self.objects[i].update(rl);
-			if let ObjectKind::Player = self.objects[i].kind {
-				self.camera.target = self.camera.target + (self.objects[i].position + self.objects[i].size/2. - self.camera.target) * 0.25;
-			}
-		}
-	}
-
-	pub fn draw(&self, rl: &mut RaylibDrawHandle) {
-
-		for o in self.objects.iter() {
-			o.draw(rl, &self.camera);
-		}
-	}
-}
-
 pub enum ObjectKind {
 	Player,
 	Wall,
@@ -54,11 +7,11 @@ pub enum ObjectKind {
 }
 
 pub struct Object {
-	position: Vector2,
-	size: Vector2,
+	pub position: Vector2,
+	pub size: Vector2,
 	speed: Vector2,
 
-	kind: ObjectKind,
+	pub kind: ObjectKind,
 	is_on_ground: bool,
 	alive: bool,
 
@@ -99,6 +52,8 @@ impl Object {
 	}
 
 	pub fn update(&mut self, rl: &mut RaylibHandle) {
+		if !self.alive { return }
+
 		self.position += self.speed;
 
 		if let ObjectKind::Player = self.kind {
@@ -124,9 +79,15 @@ impl Object {
 			&& future.x + self.size.x > other.position.x
 			&& future.y < other.position.y + other.size.y
 			&& future.y + self.size.y > other.position.y {
-				if self.position.y + self.size.y <= other.position.y {
-					self.speed.y *= 0.;
-					self.is_on_ground = true;
+				match other.kind {
+					ObjectKind::Wall => if self.position.y + self.size.y <= other.position.y {
+							self.speed.y *= 0.;
+							self.is_on_ground = true;
+						} else {
+							self.alive = false;
+						},
+					ObjectKind::Spike => self.alive = false,
+					ObjectKind::Player => todo!()
 				}
 			
 			}
@@ -147,9 +108,8 @@ impl Object {
 					),
 					self.size / 2.,
 					self.rotation,
-					Color::WHITE
+					if self.alive { Color::WHITE } else { Color::RED }
 				);
-				// rl.draw_rectangle_v(self.position, self.size, Color::WHITE);
 			},
 			ObjectKind::Wall => {
 				rl.draw_rectangle_v(self.position, self.size, Color::WHITE);
