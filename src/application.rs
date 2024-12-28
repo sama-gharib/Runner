@@ -12,7 +12,7 @@ pub struct Application {
 impl Application {
 	pub fn new() -> Self {
 		Self {
-			ui: Ui::new(),
+			ui: Default::default(),
 			game: None
 		}
 	}
@@ -26,10 +26,11 @@ impl Application {
 		rl.set_target_fps(60);
 
 		while !rl.window_should_close() {
+			self.ui.update(&mut rl);
+
 			let mut d = rl.begin_drawing(&thread);
-
 			d.clear_background(Color::BLACK);
-
+			self.ui.draw(&mut d);
 			d.draw_fps(10, 10);
 		}
 	}
