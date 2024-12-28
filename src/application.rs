@@ -25,19 +25,31 @@ impl Application {
 
 		rl.set_target_fps(60);
 
+		let mut last_state = self.ui.state().unwrap();
+
 		while !rl.window_should_close() && !self.ui.is_finished() {
-			if let Some(state) = self.ui.state() {
-				if state == "Play" { self.game.update(&mut rl); }
+			let current_state = if let Some(state) = self.ui.state() {
+				state
+			} else {
+				"Unknown state".to_string()
+			};
+			if last_state != current_state && last_state == "Play" {
+				self.game = Game::new();
 			}
+			last_state = self.ui.state().unwrap();
+
+			if current_state == "Play" { self.game.update(&mut rl); }
+			
 			self.ui.update(&mut rl);
 
 			let mut d = rl.begin_drawing(&thread);
-			d.clear_background(Color::BLACK);
-			if let Some(state) = self.ui.state() {
-				if state == "Play" { self.game.draw(&mut d); }
-			}
-			self.ui.draw(&mut d);
-			d.draw_fps(10, 10);
+				d.clear_background(Color::BLACK);
+				
+				if current_state == "Play" { self.game.draw(&mut d); }
+				
+				self.ui.draw(&mut d);
+				
+				d.draw_fps(10, 10);
 		}
 	}
 }
