@@ -1,26 +1,11 @@
-use raylib::prelude::*;
-use view::View;
+use application::Application;
 
-mod util;
-mod model;
-mod view;
+mod application;
+mod ui;
+mod game;
 
 fn main() {
-    let mut app = view::application::Application::from(
-        model::application::Application::new()
-    );
+	let mut application = Application::new();
 
-    let (mut rl, thread) = raylib::init()
-        .size(800, 450)
-        .title("Runner")
-        .build();
-
-    while !rl.window_should_close() {
-        let mut d = rl.begin_drawing(&thread);
-
-        d.clear_background(Color::BLACK);
-
-        app.draw(&mut d);
-    }
-
+	application.run();
 }
