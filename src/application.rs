@@ -6,14 +6,14 @@ use crate::game::Game;
 
 pub struct Application {
 	ui: Ui,
-	game: Option<Game>
+	game: Game
 }
 
 impl Application {
 	pub fn new() -> Self {
 		Self {
 			ui: Default::default(),
-			game: None
+			game: Game::new()
 		}
 	}
 
@@ -25,11 +25,17 @@ impl Application {
 
 		rl.set_target_fps(60);
 
-		while !rl.window_should_close() {
+		while !rl.window_should_close() && !self.ui.is_finished() {
+			if let Some(state) = self.ui.state() {
+				if state == "Play" { self.game.update(&mut rl); }
+			}
 			self.ui.update(&mut rl);
 
 			let mut d = rl.begin_drawing(&thread);
 			d.clear_background(Color::BLACK);
+			if let Some(state) = self.ui.state() {
+				if state == "Play" { self.game.draw(&mut d); }
+			}
 			self.ui.draw(&mut d);
 			d.draw_fps(10, 10);
 		}
