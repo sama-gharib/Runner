@@ -1,11 +1,22 @@
 use raylib::prelude::*;
 
+#[derive(Debug)]
 pub enum ObjectKind {
 	Player,
 	Wall,
 	Spike
 }
+impl From<&str> for ObjectKind {
+	fn from(s: &str) -> Self {
+		match s {
+			"Spike" => Self::Spike,
+			"Player" => Self::Player,
+			_ => Self::Wall
+		}
+	}
+}
 
+#[derive(Debug)]
 pub struct Object {
 	pub position: Vector2,
 	pub size: Vector2,
@@ -16,6 +27,12 @@ pub struct Object {
 	alive: bool,
 
 	rotation: f32
+}
+
+impl From<ObjectKind> for Object {
+	fn from(k: ObjectKind) -> Self {
+		Self::new().kind(k)
+	}	
 }
 
 impl Object {

@@ -1,7 +1,7 @@
 use world::World;
 use raylib::prelude::*;
 
-mod world;
+pub mod world;
 mod object;
 
 pub struct Game {
