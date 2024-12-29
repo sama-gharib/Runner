@@ -76,7 +76,9 @@ impl Object {
 		if let ObjectKind::Player = self.kind {
 			self.speed.y += 1.;
 			if rl.is_key_down(KeyboardKey::KEY_SPACE) && self.is_on_ground {
-				self.speed.y = -12.;
+				let f = self.position + Vector2::new(self.size.x * 2., -self.size.y);
+				let i = self.position;
+				self.speed.y = self.speed.x * (f.y-i.y)/(f.x-i.x)-(f.x-i.x)/(2.*self.speed.x)-1./2.;
 			}
 		}
 		if !self.is_on_ground {

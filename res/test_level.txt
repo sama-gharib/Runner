@@ -1,4 +1,8 @@
-Unit is (32, 32)
+Unit is (64, 64)
 Player at (0,0) with initial speed of 5px
 Wall at (0, 4) of size (20, 5)
 Spike at (10, 3)
+Wall at (20, 3) of size (1, 6)
+Wall at (21, 2) of size (1, 7)
+Wall at (22, 1) of size (1, 8)
+Wall at (23, 0) of size (20, 9)
