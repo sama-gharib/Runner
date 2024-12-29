@@ -1,6 +1,6 @@
 use raylib::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ObjectKind {
 	Player,
 	Wall,
@@ -16,7 +16,7 @@ impl From<&str> for ObjectKind {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Object {
 	pub position: Vector2,
 	pub size: Vector2,
@@ -103,7 +103,14 @@ impl Object {
 						} else {
 							self.alive = false;
 						},
-					ObjectKind::Spike => self.alive = false,
+					ObjectKind::Spike => {
+						let f = self.clone().position(future);
+						if f.contains(other.position + Vector2::new(other.size.x/2., 0.))
+						|| f.contains(other.position + Vector2::new(0., other.size.y))
+						|| f.contains(other.position + other.size) {
+							self.alive = false;
+						}
+					},
 					ObjectKind::Player => todo!()
 				}
 			
@@ -142,5 +149,12 @@ impl Object {
 				);
 			}
 		}
+	}
+
+	fn contains(&self, v: Vector2) -> bool {
+		   self.position.x <= v.x
+		&& self.position.x + self.size.x >= v.x
+		&& self.position.y <= v.y
+		&& self.position.y + self.size.y >= v.y
 	}
 }
