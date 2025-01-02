@@ -16,18 +16,10 @@ pub struct World {
 	camera: Camera2D
 }
 
-impl Default for World {
-	fn default() -> Self {
-		/*let mut r = Self::new();
-		
-		r.objects.push(Object::new().kind(ObjectKind::Player).speed(Vector2::new(5., 0.)));
-		r.objects.push(Object::new().kind(ObjectKind::Spike).position(Vector2::one() * 200.));
-		r.objects.push(Object::new().kind(ObjectKind::Wall).position(Vector2::new(0., 230.)).size(Vector2::new(1000., 300.)));
-		r.objects.push(Object::new().kind(ObjectKind::Wall).position(Vector2::new(970., 100.)).size(Vector2::new(30., 200.)));
-
-		r*/
+impl From<&str> for World {
+	fn from(src: &str) -> Self {
 		let mut s = String::new();
-		File::open("res/test_level.txt").unwrap().read_to_string(&mut s).unwrap();
+		File::open(&format!("res/levels/{src}")).unwrap().read_to_string(&mut s).unwrap();
 		Interpretor::interpret(
 			Tokenizer::tokenize(&s).unwrap()
 		).unwrap()

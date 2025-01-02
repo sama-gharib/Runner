@@ -1,0 +1,4 @@
+Unit is (32, 32)
+Player at (0, 0) with initial speed of 5px
+Wall at (0, 1) of size (10, 1)
+Spike at (5, 0)

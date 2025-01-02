@@ -6,14 +6,14 @@ use crate::game::Game;
 
 pub struct Application {
 	ui: Ui,
-	game: Game
+	game: Option<Game>
 }
 
 impl Application {
 	pub fn new() -> Self {
 		Self {
 			ui: Default::default(),
-			game: Game::new()
+			game: None
 		}
 	}
 
@@ -33,19 +33,22 @@ impl Application {
 			} else {
 				"Unknown state".to_string()
 			};
-			if last_state != current_state && last_state == "Play" {
-				self.game = Game::new();
+			if let Some(level) = self.ui.get_requested_level() {
+				self.game = Some(Game::new(&level));
+			} else if last_state != current_state {
+				self.game = None;
 			}
+
 			last_state = self.ui.state().unwrap();
 
-			if current_state == "Play" { self.game.update(&mut rl); }
+			if let Some(game) = &mut self.game { game.update(&mut rl); }
 			
 			self.ui.update(&mut rl);
 
 			let mut d = rl.begin_drawing(&thread);
 				d.clear_background(Color::BLACK);
 				
-				if current_state == "Play" { self.game.draw(&mut d); }
+				if let Some(game) = &mut self.game { game.draw(&mut d); }
 				
 				self.ui.draw(&mut d);
 				

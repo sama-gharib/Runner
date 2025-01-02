@@ -1,6 +1,7 @@
 use raylib::prelude::*;
 use menu::Menu;
 
+use widget::SpecialRole;
 use widget::Button;
 use std::cmp::Ordering;
 
@@ -10,36 +11,61 @@ mod widget;
 pub struct Ui {
 	menus: Vec::<Menu>,
 	current_menu: usize,
-	finished: bool
+	finished: bool,
+	requested_level: Option<String>
 }
 
 impl Default for Ui {
 	fn default() -> Self {
+		
+		let mut level_selection = Menu::new("Play");
+		level_selection = level_selection.add_widget(
+			Box::new(
+				Button::new(Vector2::new(10., 10.), Vector2::new(200., 50.))
+					.title("Main menu")
+					.role(SpecialRole::StateChanger)
+			)
+		);
+		for (i, path) in std::fs::read_dir("res/levels").unwrap().enumerate() {
+			level_selection = level_selection.add_widget(
+				Box::new(
+					Button::new(
+						Vector2::new(300., i as f32 * 55.),
+						Vector2::new(200., 50.)
+					)
+					.title(path.unwrap().path().file_name().unwrap().to_str().unwrap())
+					.role(SpecialRole::StateChanger)
+					.role(SpecialRole::LevelSelector)
+				)
+			);
+		}
+
 		Ui::new()
 			.add_menu(
 				Menu::new("Main menu")
 					.add_widget(Box::new(
 						Button::new(Vector2::new(100., 100.), Vector2::new(200., 50.))
 							.title("Play")
-							.state_changer()
+							.role(SpecialRole::StateChanger)
 					))
 					.add_widget(Box::new(
 						Button::new(Vector2::new(100., 175.), Vector2::new(200., 50.))
 							.title("Options")
-							.state_changer()
+							.role(SpecialRole::StateChanger)
 					))
 					.add_widget(Box::new(
 						Button::new(Vector2::new(100., 250.), Vector2::new(200., 50.))
 							.title("Quit")
-							.state_changer()
+							.role(SpecialRole::StateChanger)
 					))
 			)
+			.add_menu(level_selection)
 			.add_menu(
-				Menu::new("Play")
+				Menu::new(".lvl")
 					.add_widget(Box::new(
-						Button::new(Vector2::new(10., 10.), Vector2::new(200., 50.))
-							.title("Main menu")
-							.state_changer()
+							Button::new(Vector2::new(10., 10.), Vector2::new(200., 50.))
+								.title("Main menu")
+								.role(SpecialRole::StateChanger)
 					))
 			)
 			.add_menu(
@@ -47,26 +73,25 @@ impl Default for Ui {
 					.add_widget(Box::new(
 						Button::new(Vector2::new(100., 100.), Vector2::new(200., 50.))
 							.title("Yes")
-							.window_destroyer()
+							.role(SpecialRole::WindowDestroyer)
 					))
 					.add_widget(Box::new(
 						Button::new(Vector2::new(100., 175.), Vector2::new(200., 50.))
 							.title("Main menu")
-							.state_changer()
+							.role(SpecialRole::StateChanger)
 					))
 			)
 	}
 }
 
 impl Ui {
-	pub const CHANGE_STATE_COMMAND: &str = "change_state:";
-	pub const DESTROY_WINDOW_COMMAND: &str = "destroy:";
 
 	pub fn new() -> Self {
 		Self {
 			menus: Vec::<Menu>::new(),
 			current_menu: 0,
-			finished: false
+			finished: false,
+			requested_level: None
 		}
 	}
 
@@ -85,13 +110,15 @@ impl Ui {
 		if let Some(menu) = self.menus.get_mut(self.current_menu) {
 			
 			menu.update(rl);
-
-			for activation in menu.activations() {
-				if activation.starts_with(Self::CHANGE_STATE_COMMAND) {
-					let next_menu: String = activation
+			for (id, roles) in menu.activations() {
+				if roles.contains(&SpecialRole::StateChanger) {
+					let mut next_menu: String = id
 						.chars()
-						.skip(Self::CHANGE_STATE_COMMAND.len())
 						.collect();
+
+					if next_menu.contains('.') {
+						next_menu = next_menu.chars().skip_while(|x| *x!='.').collect();
+					}
 
 					let next_menu_ids: Vec::<usize> = self.menus
 						.iter()
@@ -104,8 +131,12 @@ impl Ui {
 						Ordering::Equal => self.current_menu = next_menu_ids[0],
 						Ordering::Greater => eprintln!("Ui: Multiple menus with id '{next_menu}'.")
 					}
-				} else if activation.starts_with(Self::DESTROY_WINDOW_COMMAND) {
+				}
+				if roles.contains(&SpecialRole::WindowDestroyer) {
 					self.finished = true;
+				}
+				if roles.contains(&SpecialRole::LevelSelector) {
+					self.requested_level = Some(id);
 				}
 			}
 		} else {
@@ -122,4 +153,8 @@ impl Ui {
 	}
 
 	pub fn is_finished(&self) -> bool { self.finished }
+
+	pub fn get_requested_level(&mut self) -> Option<String> {
+		std::mem::replace(&mut self.requested_level, None)
+	}
 }

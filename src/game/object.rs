@@ -26,7 +26,9 @@ pub struct Object {
 	is_on_ground: bool,
 	alive: bool,
 
-	rotation: f32
+	rotation: f32,
+
+	trail: Vec::<Vector2>
 }
 
 impl From<ObjectKind> for Object {
@@ -36,6 +38,8 @@ impl From<ObjectKind> for Object {
 }
 
 impl Object {
+	const TRAIL_LENGTH: usize = 30;
+
 	pub fn new() -> Self {
 		Self {
 			position: Vector2::zero(),
@@ -44,7 +48,8 @@ impl Object {
 			kind: ObjectKind::Wall,
 			is_on_ground: false,
 			alive: true,
-			rotation: 0.
+			rotation: 0.,
+			trail: Default::default()
 		}
 	}
 
@@ -72,6 +77,13 @@ impl Object {
 		if !self.alive { return }
 
 		self.position += self.speed;
+
+		if self.speed.x != 0. || self.speed.y != 0. {
+			self.trail.push(self.position + self.size * 0.5);
+			if self.trail.len() > Self::TRAIL_LENGTH {
+				self.trail.remove(0);
+			}
+		}
 
 		if let ObjectKind::Player = self.kind {
 			self.speed.y += 1.;
@@ -123,6 +135,14 @@ impl Object {
 	pub fn draw(&self, rl: &mut RaylibDrawHandle, camera: &Camera2D) {
 		
 		let mut rl = rl.begin_mode2D(camera);
+		
+		// rl.draw_line_strip(&self.trail, Color::WHITE);
+		for (i, w) in self.trail.windows(2).enumerate() {
+			let trail_factor = i as f32 / Self::TRAIL_LENGTH as f32;
+			let shade = (trail_factor * 255.) as u8;
+			rl.draw_line_ex(w[0], w[1], trail_factor * self.size.y * 0.3, Color::new(255, 255, 255, shade));
+		}
+ 
 		match self.kind {
 			ObjectKind::Player => {
 				rl.draw_rectangle_pro(

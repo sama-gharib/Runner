@@ -10,9 +10,9 @@ pub struct Game {
 }
 
 impl Game {
-	pub fn new() -> Self {
+	pub fn new(to_load: &str) -> Self {
 		Self {
-			world: Default::default(),
+			world: World::from(to_load),
 			paused: false
 		}
 	}

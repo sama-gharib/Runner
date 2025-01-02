@@ -1,5 +1,6 @@
 use raylib::prelude::*;
 use super::widget::Widget;
+use super::widget::SpecialRole;
 
 pub struct Menu {
 	id: String,
@@ -31,10 +32,10 @@ impl Menu {
 		}
 	}
 
-	pub fn activations(&mut self) -> Vec::<String> {
+	pub fn activations(&mut self) -> Vec::<(String, Vec::<SpecialRole>)> {
 		self.widgets
 			.iter_mut()
-			.filter_map(|x| if x.is_activated() { Some(x.get_id()) } else { None })
+			.filter_map(|x| if x.is_activated() { Some((x.get_id(), x.get_roles())) } else { None })
 			.collect()
 	}
 
