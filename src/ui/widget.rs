@@ -1,5 +1,9 @@
+//! Base elements of UI
+
 use raylib::prelude::*;
 
+
+/// Represents any widget such as buttons, labels or even input fields
 pub trait Widget {
 	fn get_position(&self) -> Vector2;
 	fn get_size(&self) -> Vector2;

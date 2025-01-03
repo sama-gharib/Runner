@@ -1,9 +1,12 @@
+//! In-game world
+
 use world::World;
 use raylib::prelude::*;
 
 pub mod world;
 mod object;
 
+/// Manages the world to application behaviour
 pub struct Game {
 	world: World,
 	paused: bool

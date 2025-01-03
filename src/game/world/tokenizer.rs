@@ -1,3 +1,5 @@
+//! Lexer for the world definition language
+
 use super::super::object::ObjectKind;
 
 #[derive(Debug)]
@@ -46,15 +48,18 @@ impl Token {
 			"ofsize" => Ok(Token::OfSize),
 			"wiso" => Ok(Token::WithIS),
 			_ => {
+				// Parsing vector and scalar litterals
+
 			  	let mut state = VectorParsingState::Initial;
 
 			  	let word = format!("{s}\n");
 			  	let mut buffer = String::new();
 			  	let mut parsed = (false, 0, 0);
-				// let mut unit = String::from("");
 
 			  	for c in word.chars() {
 			  		buffer.push(c);
+			  		
+			  		// Complete, deterministic, simple automaton
 			  		state = match state {
 			  			VectorParsingState::Initial => match c {
 			  				'(' => {
@@ -147,6 +152,7 @@ impl Tokenizer {
 	pub fn tokenize(source: &str) -> Result::<Vec::<Token>, TokenizerError> {
 		let mut r = Vec::<Token>::new();
 
+		// Removing blank characters in litterals
 		let mut s = String::new();
 		let mut level = 0;
 		for c in source.chars() {
@@ -157,15 +163,18 @@ impl Tokenizer {
 			}
 		}
 
+		// Splitting words
 		let mut binding = s
 			.split(" ")
 			.map(|x| x.split("\n"))
 			.flatten()
 			.collect::<Vec::<&str>>();
 
+		// Simplifying
 		binding = Self::collapse(binding, &["with", "initial", "speed", "of"], "wiso");
 		binding = Self::collapse(binding, &["of", "size"], "ofsize");
 
+		// Translating in tokens
 		for word in binding {
 			r.push(Token::from(word)?);
 		}
@@ -175,6 +184,7 @@ impl Tokenizer {
 		Ok(r)
 	}
 
+	/// Removes any target sequence and put replacement instead in source
 	fn collapse<'a>(source: Vec<&'a str>, target: &[&str], replacement: &'a str) -> Vec::<&'a str> {
 		let mut r = Vec::<&str>::new();
 		let mut i = 0;

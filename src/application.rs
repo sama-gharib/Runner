@@ -1,9 +1,13 @@
+//! Manages everything in-app
+
 use raylib::prelude::*;
 
 use crate::ui::Ui;
 use crate::game::Game;
 
 
+/// Highest structure in the "ownership tree" of this project
+/// Manages everything
 pub struct Application {
 	ui: Ui,
 	game: Option<Game>
@@ -17,6 +21,7 @@ impl Application {
 		}
 	}
 
+	/// Main loop
 	pub fn run(&mut self) {
 		let (mut rl, thread) = raylib::init()
 			.title("Runner")

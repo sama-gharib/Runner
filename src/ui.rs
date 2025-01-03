@@ -1,3 +1,5 @@
+//! All UI interactions
+
 use raylib::prelude::*;
 use menu::Menu;
 
@@ -8,6 +10,8 @@ use std::cmp::Ordering;
 mod menu;
 mod widget;
 
+/// Manages a group of menus and comunicates user 
+/// actions to application
 pub struct Ui {
 	menus: Vec::<Menu>,
 	current_menu: usize,
@@ -15,7 +19,10 @@ pub struct Ui {
 	requested_level: Option<String>
 }
 
+
+/// Default application UI, specialized for this project
 impl Default for Ui {
+	
 	fn default() -> Self {
 		
 		let mut level_selection = Menu::new("Play");
@@ -100,12 +107,15 @@ impl Ui {
 		self
 	}
 
+	/// Broadcasrs the draw call to current menu
 	pub fn draw(&self, rl: &mut RaylibDrawHandle) {
 		if let Some(menu) = self.menus.get(self.current_menu) {
 			menu.draw(rl);
 		}
 	}
 
+	/// Broadcasts the update call to current menu and manages menu
+	/// switching and communicating user actions to application
 	pub fn update(&mut self, rl: &mut RaylibHandle) {
 		if let Some(menu) = self.menus.get_mut(self.current_menu) {
 			

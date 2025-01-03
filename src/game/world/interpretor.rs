@@ -1,9 +1,13 @@
+//! Syntaxic analyzer
+
 use raylib::prelude::*;
 use super::tokenizer::{Unit, Token};
 use super::World;
 use super::super::object::Object;
 use super::super::object::ObjectKind;
 
+
+/// States of the parsing automaton
 enum InterpretorState {
 	Initial,
 	UnitDeclaration,
@@ -23,15 +27,16 @@ pub struct InterpretorError {
 
 pub struct Interpretor;
 impl Interpretor {
-	// TODO: Remplacer Vec::<Token> par un type valide en toute circonstance
-	// i.e.: Un type qui ne peut être crée que par Tokenizer::tokenize 
+	/// TODO: Replace Vec::<Token> with an always valid type.
+	/// i.e.: That type should be only created by Tokenizer::tokenize 
 	pub fn interpret(tokens: Vec::<Token>) -> Result<World, InterpretorError> {
 		let mut r = World::new();
-
 		let mut unit = Vector2::new(1., 1.);
-
 		let mut state = InterpretorState::Initial;
+		
 		for t in tokens {
+
+			// Complete, deterministic, simple automaton.
 			state = match state {
 				InterpretorState::Initial => match t {
 					Token::Unit => InterpretorState::UnitDeclaration,
