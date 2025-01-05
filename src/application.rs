@@ -4,20 +4,23 @@ use raylib::prelude::*;
 
 use crate::ui::Ui;
 use crate::game::Game;
+use crate::game::resource_manager::*;
 
 
 /// Highest structure in the "ownership tree" of this project
 /// Manages everything
 pub struct Application {
 	ui: Ui,
-	game: Option<Game>
+	game: Option<Game>,
+	resource_manager: ResourceManager
 }
 
 impl Application {
 	pub fn new() -> Self {
 		Self {
 			ui: Default::default(),
-			game: None
+			game: None,
+			resource_manager: ResourceManager::new()
 		}
 	}
 
@@ -39,7 +42,7 @@ impl Application {
 				"Unknown state".to_string()
 			};
 			if let Some(level) = self.ui.get_requested_level() {
-				self.game = Some(Game::new(&level));
+				self.game = Some(Game::new(&level, &mut self.resource_manager, &mut rl, &thread));
 			} else if last_state != current_state {
 				self.game = None;
 			}

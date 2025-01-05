@@ -1,5 +1,7 @@
 //! Lexer for the world definition language
 
+use super::super::resource_manager::*;
+use raylib::prelude::*;
 use super::super::object::ObjectKind;
 
 #[derive(Debug)]
@@ -39,10 +41,10 @@ pub enum Token {
 	EndOfFile
 }
 impl Token {
-	fn from(s: &str) -> Result::<Self, TokenizerError> {
+	fn from(s: &str, rm: &mut ResourceManager, rl: &mut RaylibHandle, thread: &RaylibThread) -> Result::<Self, TokenizerError> {
 		match s {
 			"Unit" => Ok(Token::Unit),
-			"Spike" | "Player" | "Wall" => Ok(Token::Kind(ObjectKind::from(s))),
+			"Spike" | "Player" | "Wall" => Ok(Token::Kind(ObjectKind::from((s, rm, rl, thread)))),
 			"is" => Ok(Token::Is),
 			"at" => Ok(Token::At),
 			"ofsize" => Ok(Token::OfSize),
@@ -149,7 +151,7 @@ impl Token {
 pub struct Tokenizer;
 impl Tokenizer {
 
-	pub fn tokenize(source: &str) -> Result::<Vec::<Token>, TokenizerError> {
+	pub fn tokenize(source: &str, rm: &mut ResourceManager, rl: &mut RaylibHandle, thread: &RaylibThread) -> Result::<Vec::<Token>, TokenizerError> {
 		let mut r = Vec::<Token>::new();
 
 		// Removing blank characters in litterals
@@ -176,7 +178,7 @@ impl Tokenizer {
 
 		// Translating in tokens
 		for word in binding {
-			r.push(Token::from(word)?);
+			r.push(Token::from(word, rm, rl, thread)?);
 		}
 
 		r.push(Token::EndOfFile);

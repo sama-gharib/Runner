@@ -5,6 +5,7 @@ use std::io::Read;
 
 use raylib::prelude::*;
 
+use super::resource_manager::*;
 use super::object::*;
 use tokenizer::Tokenizer;
 use interpretor::Interpretor;
@@ -20,15 +21,15 @@ pub struct World {
 	camera: Camera2D
 }
 
-impl From<&str> for World {
+impl From<(&str, &mut ResourceManager, &mut RaylibHandle, &RaylibThread)> for World {
 	
 	/// Loads level from file
 	/// TODO: Handle errors more cleanly
-	fn from(src: &str) -> Self {
+	fn from(arg: (&str, &mut ResourceManager, &mut RaylibHandle, &RaylibThread)) -> Self {
 		let mut s = String::new();
-		File::open(&format!("res/levels/{src}")).unwrap().read_to_string(&mut s).unwrap();
+		File::open(&format!("res/levels/{}", arg.0)).unwrap().read_to_string(&mut s).unwrap();
 		Interpretor::interpret(
-			Tokenizer::tokenize(&s).unwrap()
+			Tokenizer::tokenize(&s, arg.1, arg.2, arg.3).unwrap()
 		).unwrap()
 	}
 }
@@ -57,16 +58,16 @@ impl World {
 			self.objects[i].update(rl);
 			
 			// Camera movement
-			if let ObjectKind::Player = self.objects[i].kind {
+			if let ObjectKind::Player {..} = self.objects[i].kind {
 				self.camera.target = self.camera.target + (self.objects[i].position + self.objects[i].size/2. - self.camera.target) * 0.25;
 			}
 		}
 	}
 
 	/// Broadcasts the draw call on every object in world
-	pub fn draw(&self, rl: &mut RaylibDrawHandle) {
+	pub fn draw(&mut self, rl: &mut RaylibDrawHandle) {
 
-		for o in self.objects.iter() {
+		for o in self.objects.iter_mut() {
 			o.draw(rl, &self.camera);
 		}
 	}

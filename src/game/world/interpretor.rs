@@ -27,7 +27,7 @@ pub struct InterpretorError {
 
 pub struct Interpretor;
 impl Interpretor {
-	/// TODO: Replace Vec::<Token> with an always valid type.
+	/// TODO: Replace `Vec::<Token>` with an always valid type.
 	/// i.e.: That type should be only created by Tokenizer::tokenize 
 	pub fn interpret(tokens: Vec::<Token>) -> Result<World, InterpretorError> {
 		let mut r = World::new();
@@ -45,7 +45,6 @@ impl Interpretor {
 						unexpected: t,
 						expected: vec![
 							Token::Unit,
-							Token::Kind(ObjectKind::Player),
 							Token::Kind(ObjectKind::Spike),
 							Token::Kind(ObjectKind::Wall)
 						]

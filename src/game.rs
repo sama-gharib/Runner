@@ -2,8 +2,12 @@
 
 use world::World;
 use raylib::prelude::*;
+use resource_manager::*;
 
 pub mod world;
+pub mod resource_manager;
+pub mod animation;
+
 mod object;
 
 /// Manages the world to application behaviour
@@ -13,9 +17,9 @@ pub struct Game {
 }
 
 impl Game {
-	pub fn new(to_load: &str) -> Self {
+	pub fn new(to_load: &str, rm: &mut ResourceManager, rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
 		Self {
-			world: World::from(to_load),
+			world: World::from((to_load, rm, rl, thread)),
 			paused: false
 		}
 	}
