@@ -116,16 +116,19 @@ impl Object {
 
 		self.position += self.speed;
 
-		if !self.alive {
-			if let ObjectKind::Player {state, ..} = &mut self.kind {
+		if let ObjectKind::Player {state, run, jump, die} = &mut self.kind {
+			match state {
+				PlayerState::Jumping => jump.update(),
+				PlayerState::Running => run.update(),
+				PlayerState::Dying => die.update()
+			}
+
+			if !self.alive {
 				self.speed.y += 1.;
 				self.speed.x *= 0.95;
 				*state = PlayerState::Dying;
-			}
-		} else {
-
-			// Inputs
-			if let ObjectKind::Player {state, jump, ..} = &mut self.kind {
+			} else {
+				// Inputs
 				self.speed.y += 1.;
 				if is_key_down(KeyCode::Space) && self.is_on_ground {
 					let f = self.position + Vec2::new(self.size.x * 2., -self.size.y);
@@ -148,6 +151,7 @@ impl Object {
 			}
 			
 			self.is_on_ground = false;
+		
 		}
 	}
 
@@ -216,17 +220,6 @@ impl Object {
  		// TODO: Use more sprites
 		match &mut self.kind {
 			ObjectKind::Player {state, run, jump, die} => {
-				/*rl.draw_rectangle_pro(
-					Rectangle::new(
-						self.position.x + self.size.x/2.,
-						self.position.y + self.size.y/2.,
-						self.size.x,
-						self.size.y
-					),
-					self.size / 2.,
-					self.rotation,
-					if self.alive { Color::WHITE } else { Color::RED }
-				);*/
 				match state {
 					PlayerState::Running => run.draw(self.position, self.size, self.rotation),
 					PlayerState::Jumping => jump.draw(self.position, self.size, self.rotation),

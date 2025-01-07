@@ -37,7 +37,29 @@ impl Game {
 	pub fn draw(&mut self) {
 		self.world.draw();
 		if self.paused {
-			clear_background(Color::new(0., 0., 0., 1.));
+			draw_rectangle(
+				0.,
+				0.,
+				screen_width(),
+				screen_height() as f32,
+				Color::new(0., 0., 0., 0.5)
+			);
+
+			draw_rectangle(
+				screen_width() * 0.45,
+				screen_height() * 0.35,
+				screen_width() * 0.04,
+				screen_height() * 0.3,
+				WHITE
+			);
+
+			draw_rectangle(
+				screen_width() * 0.51,
+				screen_height() * 0.35,
+				screen_width() * 0.04,
+				screen_height() * 0.3,
+				WHITE
+			);
 		}
 	}
 }

@@ -36,8 +36,7 @@ impl Animation {
 
 	pub fn rewind(&mut self) { self.current_frame = 0; }
 
-	pub fn draw(&mut self, pos: Vec2, size: Vec2, rotation: f32) {
-		
+	pub fn update(&mut self) {
 		// Changing frame if sustain is up
 		if self.sustain_countdown == 0 {
 			self.current_frame += 1;
@@ -51,26 +50,12 @@ impl Animation {
 		} else {
 			self.sustain_countdown -= 1;
 		}
+	}
+
+	pub fn draw(&self, pos: Vec2, size: Vec2, rotation: f32) {
 		
 		// Drawing texture
 		if let Resource::Texture(texture) = self.spritesheet.as_ref() {
-			/*draw_texture_pro(
-				texture,
-				Rectangle::new(
-					Self::UNIT.x * self.current_frame as f32,
-					Self::UNIT.y * self.id as f32,
-					Self::UNIT.x,
-					Self::UNIT.y
-				),
-				Rectangle::new(
-					pos.x + size.x/2., pos.y + size.y/2.,
-					size.x, size.y
-				), 
-				size / 2.,
-				rotation,
-				Color::WHITE
-			);*/
-
 			draw_texture_ex(
 				texture,
 				pos.x, pos.y,
