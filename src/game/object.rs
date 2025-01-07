@@ -1,6 +1,6 @@
 //! Game objects, physics simulation and game graphics
 
-use raylib::prelude::*;
+use macroquad::prelude::*;
 
 use super::animation::*;
 use super::resource_manager::*;
@@ -18,22 +18,22 @@ pub enum ObjectKind {
 	Wall,
 	Spike
 }
-impl From<(&str, &mut ResourceManager, &mut RaylibHandle, &RaylibThread)> for ObjectKind {
-	fn from(arg: (&str, &mut ResourceManager, &mut RaylibHandle, &RaylibThread)) -> Self {
+
+impl ObjectKind {
+	pub async fn from(arg: (&str, &mut ResourceManager)) -> Self {
 		match arg.0 {
 			"Spike" => Self::Spike,
-			"Player" => Self::player(arg.1, arg.2, arg.3),
+			"Player" => Self::player(arg.1).await,
 			_ => Self::Wall
 		}
 	}
-}
-impl ObjectKind {
-	fn player(rm: &mut ResourceManager, rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
+
+	async fn player(rm: &mut ResourceManager) -> Self {
 		Self::Player {
 			state: PlayerState::Jumping,
-			run: Animation::new("res/sprites/player.png", 0, 6, 3, true, rm, rl, thread),
-			jump: Animation::new("res/sprites/player.png", 1, 3, 6, false, rm, rl, thread),
-			die: Animation::new("res/sprites/player.png", 2, 5, 6, false, rm, rl, thread)
+			run: Animation::new("res/sprites/player.png", 0, 6, 3, true, rm).await,
+			jump: Animation::new("res/sprites/player.png", 1, 3, 6, false, rm).await,
+			die: Animation::new("res/sprites/player.png", 2, 5, 6, false, rm).await
 		}
 	}
 }
@@ -42,9 +42,9 @@ impl ObjectKind {
 /// Represents any object in-game
 #[derive(Debug, Clone)]
 pub struct Object {
-	pub position: Vector2,
-	pub size: Vector2,
-	speed: Vector2,
+	pub position: Vec2,
+	pub size: Vec2,
+	speed: Vec2,
 
 	pub kind: ObjectKind,
 	is_on_ground: bool,
@@ -52,7 +52,7 @@ pub struct Object {
 
 	rotation: f32,
 
-	trail: Vec::<Vector2>
+	trail: Vec::<Vec2>
 }
 
 impl From<ObjectKind> for Object {
@@ -68,15 +68,15 @@ impl Object {
 	/// # Example
 	/// ```
 	/// let o = Object::new()
-	///		.position(Vector2::new(100., 100.))
-	///		.size(Vector2::new(50., 50.))
+	///		.position(Vec2::new(100., 100.))
+	///		.size(Vec2::new(50., 50.))
 	///		.kind(ObjectKind::Wall);
 	/// ```
 	pub fn new() -> Self {
 		Self {
-			position: Vector2::zero(),
-			size: Vector2::one() * 30.,
-			speed: Vector2::zero(),
+			position: Vec2::ZERO,
+			size: Vec2::ONE * 30.,
+			speed: Vec2::ZERO,
 			kind: ObjectKind::Wall,
 			is_on_ground: false,
 			alive: true,
@@ -85,17 +85,17 @@ impl Object {
 		}
 	}
 
-	pub fn position(mut self, x: Vector2) -> Self {
+	pub fn position(mut self, x: Vec2) -> Self {
 		self.position = x;
 		self
 	}
 
-	pub fn size(mut self, x: Vector2) -> Self {
+	pub fn size(mut self, x: Vec2) -> Self {
 		self.size = x;
 		self
 	}
 
-	pub fn speed(mut self, x: Vector2) -> Self {
+	pub fn speed(mut self, x: Vec2) -> Self {
 		self.speed = x;
 		self
 	}
@@ -107,26 +107,28 @@ impl Object {
 
 	/// Update function, has to be called once per game-loop
 	/// Abstracts physics but not collisions, see Object::collide().
-	pub fn update(&mut self, rl: &mut RaylibHandle) {
+	pub fn update(&mut self) {
 		// Trail management
 		self.trail.push(self.position + self.size * 0.5);
 		if self.trail.len() > Self::TRAIL_LENGTH {
 			self.trail.remove(0);
 		}
 
+		self.position += self.speed;
+
 		if !self.alive {
 			if let ObjectKind::Player {state, ..} = &mut self.kind {
+				self.speed.y += 1.;
+				self.speed.x *= 0.95;
 				*state = PlayerState::Dying;
 			}
 		} else {
 
-			self.position += self.speed;
-
 			// Inputs
 			if let ObjectKind::Player {state, jump, ..} = &mut self.kind {
 				self.speed.y += 1.;
-				if rl.is_key_down(KeyboardKey::KEY_SPACE) && self.is_on_ground {
-					let f = self.position + Vector2::new(self.size.x * 2., -self.size.y);
+				if is_key_down(KeyCode::Space) && self.is_on_ground {
+					let f = self.position + Vec2::new(self.size.x * 2., -self.size.y);
 					let i = self.position;
 					self.speed.y = self.speed.x * (f.y-i.y)/(f.x-i.x)-(f.x-i.x)/(2.*self.speed.x)-1./2.;
 				}
@@ -140,7 +142,7 @@ impl Object {
 
 			// Flight/Landing related code
 			if !self.is_on_ground {
-				self.rotation += 12.;
+				self.rotation += 0.2;
 			} else {
 				self.rotation = 0.;
 			}
@@ -170,14 +172,24 @@ impl Object {
 
 							self.is_on_ground = true;
 						} else {
+							if self.position.x + self.size.x <= other.position.x {
+								self.speed.x = 0.;
+								self.position.x = other.position.x - self.size.x;
+							} else if self.position.y >= other.position.y + other.size.y {
+								self.speed.y = 0.;
+								self.position.y = other.position.y + other.size.y;
+							}
+							
 							self.alive = false;
 						},
 					ObjectKind::Spike => {
 						// Tests collision more accurately (Spikes are triangles, not squares)
 						let f = self.clone().position(future);
-						if f.contains(other.position + Vector2::new(other.size.x/2., 0.))
-						|| f.contains(other.position + Vector2::new(0., other.size.y))
+						if f.contains(other.position + Vec2::new(other.size.x/2., 0.))
+						|| f.contains(other.position + Vec2::new(0., other.size.y))
 						|| f.contains(other.position + other.size) {
+							self.speed.x = 0.;
+							self.speed.y = 0.;
 							self.alive = false;
 						}
 					},
@@ -188,19 +200,20 @@ impl Object {
 		}
 	}
 
-	pub fn draw(&mut self, rl: &mut RaylibDrawHandle, camera: &Camera2D) {
-		
-		let mut rl = rl.begin_mode2D(camera);
-		
+	pub fn draw(&mut self) {
+				
 		// Trail related code
 		for (i, w) in self.trail.windows(2).enumerate() {
 			let trail_factor = i as f32 / Self::TRAIL_LENGTH as f32;
-			let shade = (trail_factor * 255.) as u8;
-			rl.draw_line_ex(w[0], w[1], trail_factor * self.size.y * 0.3, Color::new(255, 255, 255, shade));
+			draw_line(
+				w[0].x, w[0].y,
+				w[1].x, w[1].y,
+				trail_factor * self.size.y * 0.3,
+				Color::new(1., 1., 1., trail_factor));
 		}
  
  		// Drawing the object itself
- 		// TODO: Use sprites
+ 		// TODO: Use more sprites
 		match &mut self.kind {
 			ObjectKind::Player {state, run, jump, die} => {
 				/*rl.draw_rectangle_pro(
@@ -215,28 +228,31 @@ impl Object {
 					if self.alive { Color::WHITE } else { Color::RED }
 				);*/
 				match state {
-					PlayerState::Running => run.draw(self.position, self.size, self.rotation, &mut rl),
-					PlayerState::Jumping => jump.draw(self.position, self.size, self.rotation, &mut rl),
-					PlayerState::Dying => die.draw(self.position, self.size, 0., &mut rl)
+					PlayerState::Running => run.draw(self.position, self.size, self.rotation),
+					PlayerState::Jumping => jump.draw(self.position, self.size, self.rotation),
+					PlayerState::Dying => die.draw(self.position, self.size, 0.)
 				}
 			},
 			ObjectKind::Wall => {
-				rl.draw_rectangle_v(self.position, self.size, Color::WHITE);
+				draw_rectangle(
+					self.position.x,
+					self.position.y,
+					self.size.x,
+					self.size.y,
+					WHITE);
 			},
 			ObjectKind::Spike => {
-				rl.draw_triangle_fan(
-					&[
-						self.position + Vector2::new(self.size.x/2., 0.0),
-						self.position + Vector2::new(0., self.size.y),
-						self.position + self.size
-					],
-					Color::WHITE
+				draw_triangle(
+					self.position + Vec2::new(self.size.x/2., 0.0),
+					self.position + Vec2::new(0., self.size.y),
+					self.position + self.size,
+					WHITE
 				);
 			}
 		}
 	}
 
-	fn contains(&self, v: Vector2) -> bool {
+	fn contains(&self, v: Vec2) -> bool {
 		   self.position.x <= v.x
 		&& self.position.x + self.size.x >= v.x
 		&& self.position.y <= v.y

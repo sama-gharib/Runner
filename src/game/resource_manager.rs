@@ -1,6 +1,6 @@
 //! Resource I/O
 
-use raylib::prelude::*;
+use macroquad::prelude::*;
 
 use std::rc::Rc;
 
@@ -29,7 +29,7 @@ impl ResourceManager {
 		}
 	}
 
-	pub fn request(&mut self, path: &'static str, rl: &mut RaylibHandle, thread: &RaylibThread) -> Result<Rc::<Resource>, ResourceError> {
+	pub async fn request(&mut self, path: &'static str) -> Result<Rc::<Resource>, ResourceError> {
 
 		if let Some(r) = self.resources.get(path) {
 			Ok(Rc::clone(r))
@@ -47,13 +47,14 @@ impl ResourceManager {
 				.collect();
 
 			match &extension[..] {
-				"PNG" => match rl.load_texture(thread, path) {
+				"PNG" => match load_texture(path).await {
 					Ok(t) => {
+						t.set_filter(FilterMode::Nearest);
 						self.resources.insert(path, Rc::new(Resource::Texture(t)));
-						self.request(path, rl, thread)
+						Ok(Rc::clone(&self.resources[path]))
 					},
 					Err(s) => {
-						Err(ResourceError::LoadingError(s))
+						Err(ResourceError::LoadingError(s.to_string()))
 					}
 				}
 				_ => Err(ResourceError::UnknownExtension (extension))

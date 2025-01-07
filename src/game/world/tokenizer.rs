@@ -1,7 +1,7 @@
 //! Lexer for the world definition language
 
 use super::super::resource_manager::*;
-use raylib::prelude::*;
+use macroquad::prelude::*;
 use super::super::object::ObjectKind;
 
 #[derive(Debug)]
@@ -41,10 +41,10 @@ pub enum Token {
 	EndOfFile
 }
 impl Token {
-	fn from(s: &str, rm: &mut ResourceManager, rl: &mut RaylibHandle, thread: &RaylibThread) -> Result::<Self, TokenizerError> {
+	async fn from(s: &str, rm: &mut ResourceManager) -> Result::<Self, TokenizerError> {
 		match s {
 			"Unit" => Ok(Token::Unit),
-			"Spike" | "Player" | "Wall" => Ok(Token::Kind(ObjectKind::from((s, rm, rl, thread)))),
+			"Spike" | "Player" | "Wall" => Ok(Token::Kind(ObjectKind::from((s, rm)).await)),
 			"is" => Ok(Token::Is),
 			"at" => Ok(Token::At),
 			"ofsize" => Ok(Token::OfSize),
@@ -151,7 +151,7 @@ impl Token {
 pub struct Tokenizer;
 impl Tokenizer {
 
-	pub fn tokenize(source: &str, rm: &mut ResourceManager, rl: &mut RaylibHandle, thread: &RaylibThread) -> Result::<Vec::<Token>, TokenizerError> {
+	pub async fn tokenize(source: &str, rm: &mut ResourceManager) -> Result::<Vec::<Token>, TokenizerError> {
 		let mut r = Vec::<Token>::new();
 
 		// Removing blank characters in litterals
@@ -165,12 +165,19 @@ impl Tokenizer {
 			}
 		}
 
-		// Splitting words
+		// Splitting words and removing commentaries
 		let mut binding = s
-			.split(" ")
-			.map(|x| x.split("\n"))
+			.split("\n")
+			.filter(|x| x.len() > 0 && &x[0..1] != "#")
+			.map(|x| x.split(" "))
 			.flatten()
 			.collect::<Vec::<&str>>();
+
+		// Removing empty words
+		binding = binding
+			.into_iter()
+			.filter(|x| x.len() != 0)
+			.collect();
 
 		// Simplifying
 		binding = Self::collapse(binding, &["with", "initial", "speed", "of"], "wiso");
@@ -178,7 +185,7 @@ impl Tokenizer {
 
 		// Translating in tokens
 		for word in binding {
-			r.push(Token::from(word, rm, rl, thread)?);
+			r.push(Token::from(word, rm).await?);
 		}
 
 		r.push(Token::EndOfFile);

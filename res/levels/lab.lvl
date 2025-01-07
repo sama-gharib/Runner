@@ -1,0 +1,31 @@
+Unit is (50, 50)
+Player at (0, 0) with initial speed of 7px
+Wall at (0, 1) of size (10, 10)
+
+# First stairs
+Wall at (10, 2) of size (2, 9)
+Wall at (12, 3) of size (2, 8)
+Wall at (14, 4) of size (2, 7)
+Wall at (16, 5) of size (2, 6)
+Wall at (18, 6) of size (2, 5)
+
+# Trap down the stairs
+Spike at (20, 7)
+Spike at (21, 7)
+Spike at (22, 7)
+Wall at (20, 8) of size (3, 3)
+
+# Hamburger
+Wall at (23, 6) of size (10, 5)
+Wall at (24, 0) of size (8, 5)
+
+# Free fall
+Wall at (38, 0) of size (18, 13)
+Spike at (33, 8)
+Wall at (33, 9) of size (1, 10)
+Spike at (34, 10)
+Wall at (34, 11) of size (1, 8)
+Spike at (35, 12)
+Wall at (35, 13) of size (1, 6)
+Spike at (36, 14)
+Wall at (36, 15) of size (20, 4)

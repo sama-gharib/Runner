@@ -1,6 +1,6 @@
 //! Group of widget abstraction
 
-use raylib::prelude::*;
+use macroquad::prelude::*;
 use super::widget::Widget;
 use super::widget::SpecialRole;
 
@@ -24,16 +24,16 @@ impl Menu {
 	}
 
 	/// Broadcasts the draw wall to every widget in menu
-	pub fn draw(&self, rl: &mut RaylibDrawHandle) {
+	pub fn draw(&self) {
 		for widget in self.widgets.iter() {
-			widget.draw(rl);
+			widget.draw();
 		}
 	}
 
 	/// Broadcasts the update call to every widget in menu
-	pub fn update(&mut self,  rl: &mut RaylibHandle) {
+	pub fn update(&mut self) {
 		for widget in self.widgets.iter_mut() {
-			widget.update(rl);
+			widget.update();
 		}
 	}
 

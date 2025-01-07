@@ -1,7 +1,7 @@
 //! In-game world
 
 use world::World;
-use raylib::prelude::*;
+use macroquad::prelude::*;
 use resource_manager::*;
 
 pub mod world;
@@ -17,27 +17,27 @@ pub struct Game {
 }
 
 impl Game {
-	pub fn new(to_load: &str, rm: &mut ResourceManager, rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
+	pub async fn new(to_load: &str, rm: &mut ResourceManager) -> Self {
 		Self {
-			world: World::from((to_load, rm, rl, thread)),
+			world: World::from((to_load, rm)).await,
 			paused: false
 		}
 	}
 
-	pub fn update(&mut self, rl: &mut RaylibHandle) {
+	pub fn update(&mut self) {
 		if !self.paused {
-			self.world.update(rl);
+			self.world.update();
 		}
 
-		if rl.is_key_pressed(KeyboardKey::KEY_ESCAPE) {
+		if is_key_pressed(KeyCode::Escape) {
 			self.paused = !self.paused;
 		}
 	}
 
-	pub fn draw(&mut self, rl: &mut RaylibDrawHandle) {
-		self.world.draw(rl);
+	pub fn draw(&mut self) {
+		self.world.draw();
 		if self.paused {
-			rl.clear_background(Color::new(0, 0, 0, 100));
+			clear_background(Color::new(0., 0., 0., 1.));
 		}
 	}
 }

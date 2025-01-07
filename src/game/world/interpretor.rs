@@ -1,6 +1,6 @@
 //! Syntaxic analyzer
 
-use raylib::prelude::*;
+use macroquad::prelude::*;
 use super::tokenizer::{Unit, Token};
 use super::World;
 use super::super::object::Object;
@@ -31,7 +31,7 @@ impl Interpretor {
 	/// i.e.: That type should be only created by Tokenizer::tokenize 
 	pub fn interpret(tokens: Vec::<Token>) -> Result<World, InterpretorError> {
 		let mut r = World::new();
-		let mut unit = Vector2::new(1., 1.);
+		let mut unit = Vec2::new(1., 1.);
 		let mut state = InterpretorState::Initial;
 		
 		for t in tokens {
@@ -90,7 +90,7 @@ impl Interpretor {
 					})
 				},
 				InterpretorState::PositionDefinition(obj) => match t {
-					Token::Vector(x, y) => InterpretorState::ObjectDeclaration(obj.position(Vector2::new(x as f32 * unit.x, y as f32 * unit.y))),
+					Token::Vector(x, y) => InterpretorState::ObjectDeclaration(obj.position(Vec2::new(x as f32 * unit.x, y as f32 * unit.y))),
 					_ => return Err(InterpretorError {
 						unexpected: t,
 						expected: vec![
@@ -99,7 +99,7 @@ impl Interpretor {
 					}) 
 				},
 				InterpretorState::SizeDefinition(obj) => match t {
-					Token::Vector(x, y) => InterpretorState::ObjectDeclaration(obj.size(Vector2::new(x as f32 * unit.x, y as f32 * unit.y))),
+					Token::Vector(x, y) => InterpretorState::ObjectDeclaration(obj.size(Vec2::new(x as f32 * unit.x, y as f32 * unit.y))),
 					_ => return Err(InterpretorError {
 						unexpected: t,
 						expected: vec![
@@ -108,7 +108,7 @@ impl Interpretor {
 					}) 
 				},
 				InterpretorState::InitialSpeedDefinition(obj) => match t {
-					Token::Scalar(x, u) => InterpretorState::ObjectDeclaration(obj.speed(Vector2::new(x as f32 * if let Unit::Default = u{ unit.x } else {1.}, 0.))),
+					Token::Scalar(x, u) => InterpretorState::ObjectDeclaration(obj.speed(Vec2::new(x as f32 * if let Unit::Default = u{ unit.x } else {1.}, 0.))),
 					_ => return Err(InterpretorError {
 						unexpected: t,
 						expected: vec![

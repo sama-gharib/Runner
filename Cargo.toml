@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-raylib = "5.0.2"
+macroquad = "0.4.13"

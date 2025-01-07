@@ -1,16 +1,16 @@
 //! Base elements of UI
 
-use raylib::prelude::*;
+use macroquad::prelude::*;
 
 
 /// Represents any widget such as buttons, labels or even input fields
 pub trait Widget {
-	fn get_position(&self) -> Vector2;
-	fn get_size(&self) -> Vector2;
+	fn get_position(&self) -> Vec2;
+	fn get_size(&self) -> Vec2;
 	fn is_activated(&mut self) -> bool;
 	fn get_id(&self) -> String;
-	fn update(&mut self, rl: &mut RaylibHandle);
-	fn draw(&self, rl: &mut RaylibDrawHandle);
+	fn update(&mut self);
+	fn draw(&self);
 	fn get_roles(&self) -> Vec::<SpecialRole>;
 }
 
@@ -22,8 +22,8 @@ pub enum SpecialRole {
 }
 
 pub struct Button {
-	position: Vector2,
-	size: Vector2,
+	position: Vec2,
+	size: Vec2,
 	title: String,
 	activated: bool,
 	hovered: bool,
@@ -32,10 +32,10 @@ pub struct Button {
 }
 
 impl Widget for Button {
-	fn get_position(&self) -> Vector2 {
+	fn get_position(&self) -> Vec2 {
 		self.position
 	}
-	fn get_size(&self) -> Vector2 {
+	fn get_size(&self) -> Vec2 {
 		self.size
 	}
 	fn is_activated(&mut self) -> bool {
@@ -44,20 +44,39 @@ impl Widget for Button {
 	fn get_id(&self) -> String {
 		self.title.clone()
 	}
-	fn update(&mut self, rl: &mut RaylibHandle) {
-		let mouse = rl.get_mouse_position();
+	fn update(&mut self) {
+		let mouse = Vec2::from(mouse_position());
 
-		let p = rl.is_mouse_button_pressed(MouseButton::MOUSE_BUTTON_LEFT);
-		let r = rl.is_mouse_button_released(MouseButton::MOUSE_BUTTON_LEFT);
+		let p = is_mouse_button_pressed(MouseButton::Left);
+		let r = is_mouse_button_released(MouseButton::Left);
 
 		self.hovered = self.contains(mouse);
 		self.activated = self.pressed && self.hovered && r;
 		self.pressed = self.hovered && p || (self.pressed && !self.activated && !r);
 	}
 
-	fn draw(&self, rl: &mut RaylibDrawHandle) {
-		rl.draw_rectangle_v(self.position, self.size, if self.pressed { Color::new(200, 200, 200, 255) } else if self.hovered { Color::GRAY } else { Color::WHITE });
-		rl.draw_text(&self.title.chars().take_while(|x| *x!='.').collect::<String>(), self.position.x as i32 + 10, self.position.y as i32, self.size.y as i32, Color::BLACK);
+	fn draw(&self) {
+		draw_rectangle(
+			self.position.x,
+			self.position.y,
+			self.size.x,
+			self.size.y,
+			if self.pressed {
+				Color::new(0.75, 0.75, 0.75, 1.)
+			} else if self.hovered {
+				GRAY
+			} else {
+				WHITE
+			}
+		);
+		draw_text(
+			&self.title.chars().take_while(|x| *x!='.')
+				.collect::<String>(),
+			self.position.x + 10.,
+			self.position.y + self.size.y * 0.8,
+			self.size.y * 0.6,
+			BLACK
+		);
 	}
 
 	fn get_roles(&self) -> Vec::<SpecialRole> {
@@ -66,7 +85,7 @@ impl Widget for Button {
 }
 
 impl Button {
-	pub fn new(position: Vector2, size: Vector2) -> Self {
+	pub fn new(position: Vec2, size: Vec2) -> Self {
 		Self {
 			position,
 			size,
@@ -88,7 +107,7 @@ impl Button {
 		self
 	}
 
-	pub fn contains(&self, v: Vector2) -> bool {
+	pub fn contains(&self, v: Vec2) -> bool {
 		   self.position.x < v.x && self.position.x + self.size.x > v.x
 		&& self.position.y < v.y && self.position.y + self.size.y > v.y
 	}

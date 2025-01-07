@@ -1,6 +1,6 @@
 //! All UI interactions
 
-use raylib::prelude::*;
+use macroquad::prelude::*;
 use menu::Menu;
 
 use widget::SpecialRole;
@@ -28,7 +28,7 @@ impl Default for Ui {
 		let mut level_selection = Menu::new("Play");
 		level_selection = level_selection.add_widget(
 			Box::new(
-				Button::new(Vector2::new(10., 10.), Vector2::new(200., 50.))
+				Button::new(Vec2::new(10., 10.), Vec2::new(200., 50.))
 					.title("Main menu")
 					.role(SpecialRole::StateChanger)
 			)
@@ -37,8 +37,8 @@ impl Default for Ui {
 			level_selection = level_selection.add_widget(
 				Box::new(
 					Button::new(
-						Vector2::new(300., i as f32 * 55.),
-						Vector2::new(200., 50.)
+						Vec2::new(300., i as f32 * 55.),
+						Vec2::new(200., 50.)
 					)
 					.title(path.unwrap().path().file_name().unwrap().to_str().unwrap())
 					.role(SpecialRole::StateChanger)
@@ -51,17 +51,17 @@ impl Default for Ui {
 			.add_menu(
 				Menu::new("Main menu")
 					.add_widget(Box::new(
-						Button::new(Vector2::new(100., 100.), Vector2::new(200., 50.))
+						Button::new(Vec2::new(100., 100.), Vec2::new(200., 50.))
 							.title("Play")
 							.role(SpecialRole::StateChanger)
 					))
 					.add_widget(Box::new(
-						Button::new(Vector2::new(100., 175.), Vector2::new(200., 50.))
+						Button::new(Vec2::new(100., 175.), Vec2::new(200., 50.))
 							.title("Options")
 							.role(SpecialRole::StateChanger)
 					))
 					.add_widget(Box::new(
-						Button::new(Vector2::new(100., 250.), Vector2::new(200., 50.))
+						Button::new(Vec2::new(100., 250.), Vec2::new(200., 50.))
 							.title("Quit")
 							.role(SpecialRole::StateChanger)
 					))
@@ -70,7 +70,7 @@ impl Default for Ui {
 			.add_menu(
 				Menu::new(".lvl")
 					.add_widget(Box::new(
-							Button::new(Vector2::new(10., 10.), Vector2::new(200., 50.))
+							Button::new(Vec2::new(10., 10.), Vec2::new(200., 50.))
 								.title("Main menu")
 								.role(SpecialRole::StateChanger)
 					))
@@ -78,12 +78,12 @@ impl Default for Ui {
 			.add_menu(
 				Menu::new("Quit")
 					.add_widget(Box::new(
-						Button::new(Vector2::new(100., 100.), Vector2::new(200., 50.))
+						Button::new(Vec2::new(100., 100.), Vec2::new(200., 50.))
 							.title("Yes")
 							.role(SpecialRole::WindowDestroyer)
 					))
 					.add_widget(Box::new(
-						Button::new(Vector2::new(100., 175.), Vector2::new(200., 50.))
+						Button::new(Vec2::new(100., 175.), Vec2::new(200., 50.))
 							.title("Main menu")
 							.role(SpecialRole::StateChanger)
 					))
@@ -108,18 +108,18 @@ impl Ui {
 	}
 
 	/// Broadcasrs the draw call to current menu
-	pub fn draw(&self, rl: &mut RaylibDrawHandle) {
+	pub fn draw(&self) {
 		if let Some(menu) = self.menus.get(self.current_menu) {
-			menu.draw(rl);
+			menu.draw();
 		}
 	}
 
 	/// Broadcasts the update call to current menu and manages menu
 	/// switching and communicating user actions to application
-	pub fn update(&mut self, rl: &mut RaylibHandle) {
+	pub fn update(&mut self) {
 		if let Some(menu) = self.menus.get_mut(self.current_menu) {
 			
-			menu.update(rl);
+			menu.update();
 			for (id, roles) in menu.activations() {
 				if roles.contains(&SpecialRole::StateChanger) {
 					let mut next_menu: String = id

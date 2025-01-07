@@ -1,7 +1,7 @@
 //! Animation utilities
 
 use std::rc::Rc;
-use raylib::prelude::*;
+use macroquad::prelude::*;
 
 use super::resource_manager::*;
 
@@ -20,11 +20,11 @@ pub struct Animation {
 }
 
 impl Animation {
-	const UNIT: Vector2 = Vector2 { x: 32., y: 32. };
+	const UNIT: Vec2 = Vec2 { x: 32., y: 32. };
 
-	pub fn new(path: &'static str, id: u32, length: u32, sustain: u32, looped: bool, rm: &mut ResourceManager, rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
+	pub async fn new(path: &'static str, id: u32, length: u32, sustain: u32, looped: bool, rm: &mut ResourceManager) -> Self {
 		Self {
-			spritesheet: rm.request(path, rl, thread).unwrap(),
+			spritesheet: rm.request(path).await.unwrap(),
 			id,
 			length,
 			sustain,
@@ -36,7 +36,7 @@ impl Animation {
 
 	pub fn rewind(&mut self) { self.current_frame = 0; }
 
-	pub fn draw(&mut self, pos: Vector2, size: Vector2, rotation: f32, rl: &mut RaylibMode2D::<RaylibDrawHandle>/*rl: &mut RaylibDrawHandle*/) {
+	pub fn draw(&mut self, pos: Vec2, size: Vec2, rotation: f32) {
 		
 		// Changing frame if sustain is up
 		if self.sustain_countdown == 0 {
@@ -54,7 +54,7 @@ impl Animation {
 		
 		// Drawing texture
 		if let Resource::Texture(texture) = self.spritesheet.as_ref() {
-			rl.draw_texture_pro(
+			/*draw_texture_pro(
 				texture,
 				Rectangle::new(
 					Self::UNIT.x * self.current_frame as f32,
@@ -69,7 +69,25 @@ impl Animation {
 				size / 2.,
 				rotation,
 				Color::WHITE
-			);
+			);*/
+
+			draw_texture_ex(
+				texture,
+				pos.x, pos.y,
+				WHITE,
+				DrawTextureParams {
+					dest_size: Some(vec2(size.x, size.y)),
+					source: Some(Rect {
+						x: Self::UNIT.x * self.current_frame as f32,
+						y: Self::UNIT.y * self.id as f32,
+						w: Self::UNIT.x,
+						h: Self::UNIT.y
+					}),
+					rotation,
+					pivot: None,
+					..Default::default()
+				}
+			)
 		}
 	}
 }

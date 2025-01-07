@@ -1,6 +1,6 @@
 //! Manages everything in-app
 
-use raylib::prelude::*;
+use macroquad::prelude::*;
 
 use crate::ui::Ui;
 use crate::game::Game;
@@ -25,42 +25,35 @@ impl Application {
 	}
 
 	/// Main loop
-	pub fn run(&mut self) {
-		let (mut rl, thread) = raylib::init()
-			.title("Runner")
-			.size(800, 450)
-			.build();
-
-		rl.set_target_fps(60);
+	pub async fn run(&mut self) {
 
 		let mut last_state = self.ui.state().unwrap();
 
-		while !rl.window_should_close() && !self.ui.is_finished() {
+		while !self.ui.is_finished() {
 			let current_state = if let Some(state) = self.ui.state() {
 				state
 			} else {
 				"Unknown state".to_string()
 			};
 			if let Some(level) = self.ui.get_requested_level() {
-				self.game = Some(Game::new(&level, &mut self.resource_manager, &mut rl, &thread));
+				self.game = Some(Game::new(&level, &mut self.resource_manager).await);
 			} else if last_state != current_state {
 				self.game = None;
 			}
 
 			last_state = self.ui.state().unwrap();
 
-			if let Some(game) = &mut self.game { game.update(&mut rl); }
+			if let Some(game) = &mut self.game { game.update(); }
 			
-			self.ui.update(&mut rl);
+			self.ui.update();
 
-			let mut d = rl.begin_drawing(&thread);
-				d.clear_background(Color::BLACK);
+			clear_background(BLACK);
 				
-				if let Some(game) = &mut self.game { game.draw(&mut d); }
+			if let Some(game) = &mut self.game { game.draw(); }
 				
-				self.ui.draw(&mut d);
-				
-				d.draw_fps(10, 10);
+			self.ui.draw();
+						
+			next_frame().await;
 		}
 	}
 }
