@@ -1,6 +1,7 @@
 //! Resource I/O
 
 use macroquad::prelude::*;
+use macroquad::audio::*;
 
 use std::rc::Rc;
 
@@ -9,7 +10,7 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub enum Resource {
 	Texture (Texture2D),
-	// TODO: Add resource types
+	Sound (Sound)
 }
 
 #[derive(Debug)]
@@ -55,6 +56,15 @@ impl ResourceManager {
 					},
 					Err(s) => {
 						Err(ResourceError::LoadingError(s.to_string()))
+					}
+				},
+				"WAV" => match load_sound(path).await {
+					Ok(s) => {
+						self.resources.insert(path, Rc::new(Resource::Sound(s)));
+						Ok(Rc::clone(&self.resources[path]))
+					},
+					Err(e) => {
+						Err(ResourceError::LoadingError(e.to_string()))
 					}
 				}
 				_ => Err(ResourceError::UnknownExtension (extension))

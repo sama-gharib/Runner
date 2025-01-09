@@ -18,7 +18,8 @@ pub mod interpretor;
 #[derive(Debug)]
 pub struct World {
 	objects: Vec::<Object>,
-	camera: Camera2D
+	camera: Camera2D,
+	playing: bool
 }
 
 
@@ -41,14 +42,20 @@ impl World {
 			camera: Camera2D {
 				zoom: vec2(1./400., 1./225.),
 				..Default::default()
-			}
+			},
+			playing: true
 		}
 	}
+
+	pub fn is_playing(&self) -> bool { self.playing } 
 
 	/// Broadcasts the update call on every object of world, handle collisions
 	/// and move camera.
 	/// Has to be called once per game loop
 	pub fn update(&mut self) {
+
+		self.playing = false;
+
 		for i in 0..self.objects.len() {			
 			// Collision code
 			let splitted = self.objects.split_at_mut(i+1);
@@ -60,7 +67,12 @@ impl World {
 			
 			// Camera movement
 			if let ObjectKind::Player {..} = self.objects[i].kind {
-				self.camera.target = self.camera.target + (self.objects[i].position + self.objects[i].size/2. - self.camera.target) * 0.1;
+				self.camera.target = self.camera.target + (
+					self.objects[i].position + self.objects[i].size/2. + vec2(screen_width() * 2./7., 0.) -
+					self.camera.target
+				) * 0.1;
+
+				if self.objects[i].is_alive() { self.playing = true; }
 			}
 		}
 	}

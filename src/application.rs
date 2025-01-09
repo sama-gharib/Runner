@@ -43,17 +43,29 @@ impl Application {
 
 			last_state = self.ui.state().unwrap();
 
-			if let Some(game) = &mut self.game { game.update(); }
+			if let Some(game) = &mut self.game {
+				game.update();
+
+				// Restart level
+				if game.is_finished() && is_key_pressed(KeyCode::R) {
+					game.reload(&mut self.resource_manager).await;
+				}
+			}
 			
 			self.ui.update();
 
 			clear_background(BLACK);
 				
-			if let Some(game) = &mut self.game { game.draw(); }
+			if let Some(game) = &mut self.game {
+				game.draw();
+				if game.is_finished() {
+					draw_text("Press R to restart", 10., 440., 48., RED);
+				}
+			}
 				
 			self.ui.draw();
 						
 			next_frame().await;
 		}
-	}
+	} 
 }

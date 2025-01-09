@@ -13,15 +13,23 @@ mod object;
 /// Manages the world to application behaviour
 pub struct Game {
 	world: World,
-	paused: bool
+	paused: bool,
+	loaded: String
 }
 
 impl Game {
 	pub async fn new(to_load: &str, rm: &mut ResourceManager) -> Self {
 		Self {
 			world: World::from((to_load, rm)).await,
-			paused: false
+			paused: false,
+			loaded: to_load.to_owned()
 		}
+	}
+
+	pub fn is_finished(&self) -> bool { !self.world.is_playing() }
+
+	pub async fn reload(&mut self, rm: &mut ResourceManager) {
+		*self = Self::new(&self.loaded, rm).await;
 	}
 
 	pub fn update(&mut self) {

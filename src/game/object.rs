@@ -1,6 +1,9 @@
 //! Game objects, physics simulation and game graphics
 
 use macroquad::prelude::*;
+use macroquad::audio::*;
+
+use std::rc::Rc;
 
 use super::animation::*;
 use super::resource_manager::*;
@@ -13,8 +16,23 @@ pub enum PlayerState {
 }
 
 #[derive(Debug, Clone)]
+struct Action {
+	animation: Animation,
+	sound: Rc::<Resource>
+}
+
+impl Action {
+	fn new(animation: Animation, sound: Rc::<Resource>) -> Self {
+		Self {
+			animation,
+			sound
+		}
+	}
+}
+
+#[derive(Debug, Clone)]
 pub enum ObjectKind {
-	Player {state: PlayerState, run: Animation, jump: Animation, die: Animation},
+	Player {state: PlayerState, run: Action, jump: Action, die: Action},
 	Wall,
 	Spike
 }
@@ -29,11 +47,29 @@ impl ObjectKind {
 	}
 
 	async fn player(rm: &mut ResourceManager) -> Self {
+		
+		let run_sound = rm.request("res/sounds/running.wav").await.unwrap();
+		if let Resource::Sound(s) = run_sound.as_ref() {
+			play_sound(s, PlaySoundParams {
+				looped: true,
+				..Default::default()
+			});
+		}
+
 		Self::Player {
 			state: PlayerState::Jumping,
-			run: Animation::new("res/sprites/player.png", 0, 6, 3, true, rm).await,
-			jump: Animation::new("res/sprites/player.png", 1, 3, 6, false, rm).await,
-			die: Animation::new("res/sprites/player.png", 2, 5, 6, false, rm).await
+			run: Action::new(
+				Animation::new("res/sprites/player.png", 0, 6, 3, true, rm).await,
+				run_sound
+			),
+			jump: Action::new(
+				Animation::new("res/sprites/player.png", 1, 3, 6, false, rm).await,
+				rm.request("res/sounds/jumping.wav").await.unwrap()
+			),
+			die: Action::new(
+				Animation::new("res/sprites/player.png", 2, 5, 6, false, rm).await,
+				rm.request("res/sounds/dying.wav").await.unwrap()
+			)
 		}
 	}
 }
@@ -105,6 +141,8 @@ impl Object {
 		self
 	}
 
+	pub fn is_alive(&self) -> bool { self.alive }
+
 	/// Update function, has to be called once per game-loop
 	/// Abstracts physics but not collisions, see Object::collide().
 	pub fn update(&mut self) {
@@ -118,9 +156,9 @@ impl Object {
 
 		if let ObjectKind::Player {state, run, jump, die} = &mut self.kind {
 			match state {
-				PlayerState::Jumping => jump.update(),
-				PlayerState::Running => run.update(),
-				PlayerState::Dying => die.update()
+				PlayerState::Jumping => jump.animation.update(),
+				PlayerState::Running => run.animation.update(),
+				PlayerState::Dying => die.animation.update()
 			}
 
 			if !self.alive {
@@ -134,10 +172,14 @@ impl Object {
 					let f = self.position + Vec2::new(self.size.x * 2., -self.size.y);
 					let i = self.position;
 					self.speed.y = self.speed.x * (f.y-i.y)/(f.x-i.x)-(f.x-i.x)/(2.*self.speed.x)-1./2.;
+					
+					if let Resource::Sound(s) = jump.sound.as_ref() {
+						play_sound_once(&s);
+					}
 				}
 				if self.is_on_ground {
 					*state = PlayerState::Running;
-					jump.rewind();
+					jump.animation.rewind();
 				} else {
 					*state = PlayerState::Jumping;
 				}
@@ -184,7 +226,7 @@ impl Object {
 								self.position.y = other.position.y + other.size.y;
 							}
 							
-							self.alive = false;
+							self.die();
 						},
 					ObjectKind::Spike => {
 						// Tests collision more accurately (Spikes are triangles, not squares)
@@ -194,7 +236,7 @@ impl Object {
 						|| f.contains(other.position + other.size) {
 							self.speed.x = 0.;
 							self.speed.y = 0.;
-							self.alive = false;
+							self.die();
 						}
 					},
 					ObjectKind::Player {..} => todo!()
@@ -221,9 +263,9 @@ impl Object {
 		match &mut self.kind {
 			ObjectKind::Player {state, run, jump, die} => {
 				match state {
-					PlayerState::Running => run.draw(self.position, self.size, self.rotation),
-					PlayerState::Jumping => jump.draw(self.position, self.size, self.rotation),
-					PlayerState::Dying => die.draw(self.position, self.size, 0.)
+					PlayerState::Running => run.animation.draw(self.position, self.size, self.rotation),
+					PlayerState::Jumping => jump.animation.draw(self.position, self.size, self.rotation),
+					PlayerState::Dying => die.animation.draw(self.position, self.size, 0.)
 				}
 			},
 			ObjectKind::Wall => {
@@ -250,5 +292,19 @@ impl Object {
 		&& self.position.x + self.size.x >= v.x
 		&& self.position.y <= v.y
 		&& self.position.y + self.size.y >= v.y
+	}
+
+	fn die(&mut self) {
+		if self.alive {
+			self.alive = false;
+			if let ObjectKind::Player {die, run, ..} = &self.kind {
+				if let Resource::Sound (s) = run.sound.as_ref() {
+					stop_sound(s);
+				}
+				if let Resource::Sound (s) = die.sound.as_ref() {
+					play_sound_once(s);
+				}
+			}
+		}
 	}
 }
