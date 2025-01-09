@@ -29,6 +29,7 @@ impl Game {
 	pub fn is_finished(&self) -> bool { !self.world.is_playing() }
 
 	pub async fn reload(&mut self, rm: &mut ResourceManager) {
+		self.world.clear();
 		*self = Self::new(&self.loaded, rm).await;
 	}
 

@@ -4,13 +4,29 @@ use macroquad::prelude::*;
 use macroquad::audio::*;
 
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum Resource {
 	Texture (Texture2D),
-	Sound (Sound)
+	Sound {sound: Sound, volume: Rc::<RefCell::<f32>>}
+}
+
+impl Resource {
+	pub fn play_if_sound(&self, looped: bool) {
+		if let Self::Sound {sound, volume} = self {
+			play_sound(
+				sound,
+				PlaySoundParams {
+					volume: volume.as_ref().borrow().clone(),
+					looped,
+					..Default::default()
+				}
+			)
+		}
+	}
 }
 
 #[derive(Debug)]
@@ -20,13 +36,15 @@ pub enum ResourceError {
 }
 
 pub struct ResourceManager {
-	resources: HashMap::<&'static str, Rc::<Resource>>
+	resources: HashMap::<&'static str, Rc::<Resource>>,
+	volume: Rc::<RefCell<f32>>
 }
 
 impl ResourceManager {
 	pub fn new() -> Self {
 		Self {
-			resources: Default::default()
+			resources: Default::default(),
+			volume: Rc::new(RefCell::new(0.5))
 		}
 	}
 
@@ -60,7 +78,7 @@ impl ResourceManager {
 				},
 				"WAV" => match load_sound(path).await {
 					Ok(s) => {
-						self.resources.insert(path, Rc::new(Resource::Sound(s)));
+						self.resources.insert(path, Rc::new(Resource::Sound{sound: s, volume: Rc::clone(&self.volume)}));
 						Ok(Rc::clone(&self.resources[path]))
 					},
 					Err(e) => {
@@ -70,5 +88,10 @@ impl ResourceManager {
 				_ => Err(ResourceError::UnknownExtension (extension))
 			}
 		}
+	}
+
+	pub fn set_volume(&mut self, v: f32) {
+		let mut b = self.volume.borrow_mut();
+		*b = v;
 	}
 }

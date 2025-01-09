@@ -16,7 +16,7 @@ pub enum PlayerState {
 }
 
 #[derive(Debug, Clone)]
-struct Action {
+pub struct Action {
 	animation: Animation,
 	sound: Rc::<Resource>
 }
@@ -49,12 +49,7 @@ impl ObjectKind {
 	async fn player(rm: &mut ResourceManager) -> Self {
 		
 		let run_sound = rm.request("res/sounds/running.wav").await.unwrap();
-		if let Resource::Sound(s) = run_sound.as_ref() {
-			play_sound(s, PlaySoundParams {
-				looped: true,
-				..Default::default()
-			});
-		}
+		run_sound.play_if_sound(true);
 
 		Self::Player {
 			state: PlayerState::Jumping,
@@ -95,6 +90,16 @@ impl From<ObjectKind> for Object {
 	fn from(k: ObjectKind) -> Self {
 		Self::new().kind(k)
 	}	
+}
+
+impl Drop for Object {
+	fn drop(&mut self) {
+		if let ObjectKind::Player {run, ..} = &self.kind {
+			if let Resource::Sound {sound, ..} = run.sound.as_ref() {
+				stop_sound(&sound);
+			}
+		}
+	}
 }
 
 impl Object {
@@ -173,9 +178,7 @@ impl Object {
 					let i = self.position;
 					self.speed.y = self.speed.x * (f.y-i.y)/(f.x-i.x)-(f.x-i.x)/(2.*self.speed.x)-1./2.;
 					
-					if let Resource::Sound(s) = jump.sound.as_ref() {
-						play_sound_once(&s);
-					}
+					jump.sound.play_if_sound(false);
 				}
 				if self.is_on_ground {
 					*state = PlayerState::Running;
@@ -230,7 +233,7 @@ impl Object {
 						},
 					ObjectKind::Spike => {
 						// Tests collision more accurately (Spikes are triangles, not squares)
-						let f = self.clone().position(future);
+						let f = Self::new().position(future).size(self.size);
 						if f.contains(other.position + Vec2::new(other.size.x/2., 0.))
 						|| f.contains(other.position + Vec2::new(0., other.size.y))
 						|| f.contains(other.position + other.size) {
@@ -298,12 +301,10 @@ impl Object {
 		if self.alive {
 			self.alive = false;
 			if let ObjectKind::Player {die, run, ..} = &self.kind {
-				if let Resource::Sound (s) = run.sound.as_ref() {
-					stop_sound(s);
+				if let Resource::Sound {sound, ..} = run.sound.as_ref() {
+					stop_sound(sound);
 				}
-				if let Resource::Sound (s) = die.sound.as_ref() {
-					play_sound_once(s);
-				}
+				die.sound.play_if_sound(false);
 			}
 		}
 	}

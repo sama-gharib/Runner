@@ -1,6 +1,7 @@
 //! Manages everything in-app
 
 use macroquad::prelude::*;
+use macroquad::audio::*;
 
 use crate::ui::Ui;
 use crate::game::Game;
@@ -12,7 +13,8 @@ use crate::game::resource_manager::*;
 pub struct Application {
 	ui: Ui,
 	game: Option<Game>,
-	resource_manager: ResourceManager
+	resource_manager: ResourceManager,
+	notif_cooldown: i32
 }
 
 impl Application {
@@ -20,7 +22,8 @@ impl Application {
 		Self {
 			ui: Default::default(),
 			game: None,
-			resource_manager: ResourceManager::new()
+			resource_manager: ResourceManager::new(),
+			notif_cooldown: 0
 		}
 	}
 
@@ -35,10 +38,18 @@ impl Application {
 			} else {
 				"Unknown state".to_string()
 			};
+
+			// Starting level if requested
 			if let Some(level) = self.ui.get_requested_level() {
 				self.game = Some(Game::new(&level, &mut self.resource_manager).await);
 			} else if last_state != current_state {
 				self.game = None;
+			}
+
+			// Changing volume if requested
+			if let Some(volume) = self.ui.get_requested_volume() {
+				self.resource_manager.request("res/sounds/pluck.wav").await.unwrap().play_if_sound(false);
+				self.resource_manager.set_volume(volume);
 			}
 
 			last_state = self.ui.state().unwrap();

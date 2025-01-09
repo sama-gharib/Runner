@@ -38,10 +38,19 @@ impl Menu {
 	}
 
 	/// Collects ids and role from activated widgets
-	pub fn activations(&mut self) -> Vec::<(String, Vec::<SpecialRole>)> {
+	pub fn activations(&mut self) -> Vec::<(String, Vec::<SpecialRole>, f32)> {
 		self.widgets
 			.iter_mut()
-			.filter_map(|x| if x.is_activated() { Some((x.get_id(), x.get_roles())) } else { None })
+			.filter_map(|x| {
+				let f = x.activation_factor();
+				if f != 0. {
+					Some(
+						(x.get_id(), x.get_roles(), f)
+					)
+				} else {
+					None
+				}
+			})
 			.collect()
 	}
 

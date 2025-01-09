@@ -3,8 +3,7 @@
 use macroquad::prelude::*;
 use menu::Menu;
 
-use widget::SpecialRole;
-use widget::Button;
+use widget::*;
 use std::cmp::Ordering;
 
 mod menu;
@@ -16,7 +15,8 @@ pub struct Ui {
 	menus: Vec::<Menu>,
 	current_menu: usize,
 	finished: bool,
-	requested_level: Option<String>
+	requested_level: Option<String>,
+	requested_volume: Option<f32>
 }
 
 
@@ -47,6 +47,8 @@ impl Default for Ui {
 			);
 		}
 
+		let center = vec2(screen_width(), screen_height())/2.;
+
 		Ui::new()
 			.add_menu(
 				Menu::new("Main menu")
@@ -76,6 +78,19 @@ impl Default for Ui {
 					))
 			)
 			.add_menu(
+				Menu::new("Options")
+					.add_widget(Box::new(
+							Button::new(Vec2::new(10., 10.), Vec2::new(200., 50.))
+								.title("Main menu")
+								.role(SpecialRole::StateChanger)
+					))
+					.add_widget(Box::new(
+						SlideBar::new(vec2(center.x - 100., 100.), 200.)
+							.title("Master volume")
+							.role(SpecialRole::VolumeChanger)
+					))
+			)
+			.add_menu(
 				Menu::new("Quit")
 					.add_widget(Box::new(
 						Button::new(Vec2::new(100., 100.), Vec2::new(200., 50.))
@@ -98,7 +113,8 @@ impl Ui {
 			menus: Vec::<Menu>::new(),
 			current_menu: 0,
 			finished: false,
-			requested_level: None
+			requested_level: None,
+			requested_volume: None
 		}
 	}
 
@@ -120,7 +136,7 @@ impl Ui {
 		if let Some(menu) = self.menus.get_mut(self.current_menu) {
 			
 			menu.update();
-			for (id, roles) in menu.activations() {
+			for (id, roles, activation) in menu.activations() {
 				if roles.contains(&SpecialRole::StateChanger) {
 					let mut next_menu: String = id
 						.chars()
@@ -146,7 +162,10 @@ impl Ui {
 					self.finished = true;
 				}
 				if roles.contains(&SpecialRole::LevelSelector) {
-					self.requested_level = Some(id);
+					self.requested_level = Some(id.clone());
+				}
+				if roles.contains(&SpecialRole::VolumeChanger) {
+					self.requested_volume = Some(activation);
 				}
 			}
 		} else {
@@ -166,5 +185,9 @@ impl Ui {
 
 	pub fn get_requested_level(&mut self) -> Option<String> {
 		std::mem::replace(&mut self.requested_level, None)
+	}
+
+	pub fn get_requested_volume(&mut self) -> Option<f32> {
+		std::mem::replace(&mut self.requested_volume, None)
 	}
 }

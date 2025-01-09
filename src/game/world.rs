@@ -49,6 +49,8 @@ impl World {
 
 	pub fn is_playing(&self) -> bool { self.playing } 
 
+	pub fn clear(&mut self) { self.objects.clear() }
+
 	/// Broadcasts the update call on every object of world, handle collisions
 	/// and move camera.
 	/// Has to be called once per game loop
